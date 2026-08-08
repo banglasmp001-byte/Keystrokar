@@ -102,8 +102,11 @@ public final class ActionExecutor {
         if (client == null) return;
 
         InputUtil.Key key = InputUtil.Type.MOUSE.createFromCode(glfwButton);
+        // In 1.21.1 Yarn: KeyBinding has no matchesMouseButton(); use matchesKey on the
+        // MOUSE-type InputUtil.Key's keyCode (which is the GLFW button code, stored negative
+        // by InputUtil for mouse). The safest approach is to compare the bound key directly.
         for (KeyBinding kb : client.options.allKeys) {
-            if (kb.matchesMouseButton(glfwButton)) {
+            if (kb.getBoundKeyOf().equals(key)) {
                 KeyBinding.onKeyPressed(key);
                 break;
             }

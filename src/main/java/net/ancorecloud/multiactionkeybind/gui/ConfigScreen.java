@@ -70,7 +70,11 @@ public class ConfigScreen extends Screen {
             int rowY = HEADER_H + i * ITEM_HEIGHT - scrollOffset;
             RowWidgets row = buildRow(btn, i + 1, rowY);
             rowWidgetList.add(row);
-            row.addAll(this);
+            // addDrawableChild is protected — call it here inside the Screen subclass
+            addDrawableChild(row.edit);
+            addDrawableChild(row.delete);
+            addDrawableChild(row.reset);
+            addDrawableChild(row.toggle);
         }
     }
 
@@ -266,13 +270,6 @@ public class ConfigScreen extends Screen {
             this.delete = delete;
             this.reset = reset;
             this.toggle = toggle;
-        }
-
-        void addAll(Screen screen) {
-            screen.addDrawableChild(edit);
-            screen.addDrawableChild(delete);
-            screen.addDrawableChild(reset);
-            screen.addDrawableChild(toggle);
         }
     }
 }

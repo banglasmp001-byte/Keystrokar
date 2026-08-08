@@ -12,21 +12,14 @@ import java.util.List;
 /**
  * Executes all child actions for a given MainButton.
  *
- * <p>Uses Minecraft's own {@link KeyBinding#setKeyPressed} / {@link KeyBinding#onKeyPressed}
- * so that vanilla keybind logic is correctly updated.  For actions that do not map to any
- * registered KeyBinding we fall back to a direct GLFW synthetic-key approach only when
- * the GLFW window handle is available, which is always the case on the client thread.</p>
- *
- * <p>Mouse actions are simulated via {@link MinecraftClient#mouse} accessor using the same
- * GLFW callback path that vanilla uses for real mouse input.</p>
+ * Uses Minecraft's own KeyBinding.setKeyPressed / KeyBinding.onKeyPressed
+ * so that vanilla keybind logic is correctly updated.
  */
 public final class ActionExecutor {
 
     private ActionExecutor() {}
 
-    /**
-     * Press all actions (called on button touch-down or trigger-key-down).
-     */
+    /** Press all actions (called on button touch-down). */
     public static void pressAll(MainButton button) {
         if (button == null || !button.isEnabled()) return;
         List<BoundAction> actions = button.getActions();
@@ -41,9 +34,7 @@ public final class ActionExecutor {
         }
     }
 
-    /**
-     * Release all actions (called on button touch-up or trigger-key-up).
-     */
+    /** Release all actions (called on button touch-up). */
     public static void releaseAll(MainButton button) {
         if (button == null || !button.isEnabled()) return;
         List<BoundAction> actions = button.getActions();
@@ -81,14 +72,12 @@ public final class ActionExecutor {
         if (client == null) return;
 
         InputUtil.Key key = InputUtil.fromKeyCode(glfwKey, 0);
-        // Update all registered vanilla key bindings that use this key
         for (KeyBinding kb : client.options.allKeys) {
             if (kb.matchesKey(glfwKey, 0)) {
                 KeyBinding.onKeyPressed(key);
                 break;
             }
         }
-        // Also mark the raw key as pressed so isPressed() returns true
         KeyBinding.setKeyPressed(key, true);
     }
 
@@ -101,12 +90,16 @@ public final class ActionExecutor {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) return;
 
+        // Build the InputUtil.Key for this mouse button.
+        // InputUtil.Type.MOUSE.createFromCode(n) creates a key with
+        // translationKey "key.mouse.<n+1>" — we compare by translation key
+        // to find matching vanilla KeyBindings without needing getBoundKeyOf().
         InputUtil.Key key = InputUtil.Type.MOUSE.createFromCode(glfwButton);
-        // In 1.21.1 Yarn: KeyBinding has no matchesMouseButton(); use matchesKey on the
-        // MOUSE-type InputUtil.Key's keyCode (which is the GLFW button code, stored negative
-        // by InputUtil for mouse). The safest approach is to compare the bound key directly.
+        String translationKey = key.getTranslationKey();
+
         for (KeyBinding kb : client.options.allKeys) {
-            if (kb.getBoundKeyOf().equals(key)) {
+            // getBoundKeyTranslationKey() returns e.g. "key.mouse.0" for left click
+            if (translationKey.equals(kb.getBoundKeyTranslationKey())) {
                 KeyBinding.onKeyPressed(key);
                 break;
             }
